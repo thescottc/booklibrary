@@ -1,0 +1,1607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Reading Room — Lending Library</title>
+<style>
+  :root{--bg:#0f1216;--panel:#1a1f27;--panel-2:#232a35;--border:#2d3642;--text:#e6edf3;--muted:#8b98a8;--accent:#4f8cff;--accent-2:#6ee7b7;--danger:#ff6b6b;--warn:#fbbf24;--radius:10px}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+  header{background:var(--panel);border-bottom:1px solid var(--border);padding:16px 20px 12px;display:flex;flex-direction:column;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+  .header-logo{display:flex;align-items:center;justify-content:center;gap:10px}
+  .header-logo img{max-height:56px;max-width:100%;display:block}
+  header h1{font-size:1.25rem;margin:0;text-align:center}
+  header h1 span{color:var(--accent)}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
+  .tab{background:transparent;border:1px solid transparent;color:var(--muted);padding:8px 14px;border-radius:var(--radius);cursor:pointer;font-size:.9rem;font-weight:500}
+  .tab:hover{color:var(--text)}
+  .tab.active{background:var(--panel-2);color:var(--text);border-color:var(--border)}
+  .admin-badge{background:var(--accent);color:#fff;font-size:.7rem;padding:2px 8px;border-radius:20px;font-weight:700;display:none}
+  .admin-badge.on{display:inline-block}
+  main{max-width:1200px;margin:0 auto;padding:20px}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:20px}
+  input,select,textarea,button{font-family:inherit;font-size:.9rem}
+  input[type=text],input[type=date],input[type=number],input[type=email],input[type=password],input[type=url],select,textarea{background:var(--panel);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:var(--radius);outline:none}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+  .search{flex:1;min-width:200px}
+  button.btn{background:var(--accent);color:#fff;border:none;padding:9px 16px;border-radius:var(--radius);cursor:pointer;font-weight:600}
+  button.btn:hover{filter:brightness(1.1)}
+  button.btn.secondary{background:var(--panel-2);color:var(--text);border:1px solid var(--border)}
+  button.btn.danger{background:var(--danger)}
+  button.btn.small{padding:5px 10px;font-size:.78rem}
+  button.btn:disabled{opacity:.5;cursor:not-allowed}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;transition:transform .12s,border-color .12s;cursor:pointer}
+  .card:hover{transform:translateY(-2px);border-color:var(--accent)}
+  .cover{aspect-ratio:2/3;background:var(--panel-2);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:3rem;background-size:cover;background-position:center}
+  .card-body{padding:12px;flex:1;display:flex;flex-direction:column}
+  .card-title{font-weight:700;font-size:.95rem;margin-bottom:2px}
+  .card-meta{font-size:.8rem;color:var(--muted);margin-bottom:8px}
+  .badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+  .badge{font-size:.7rem;padding:2px 8px;border-radius:20px;font-weight:600;letter-spacing:.02em}
+  .badge.format{background:#21324a;color:#7fb0ff}
+  .badge.available{background:#10372a;color:var(--accent-2)}
+  .badge.loaned{background:#3d2f0f;color:var(--warn)}
+  .badge.reserved{background:#2a2140;color:#c4a7ff}
+  .card-actions{display:flex;gap:6px;margin-top:auto}
+  .card-actions button{flex:1;font-size:.78rem;padding:6px 8px}
+  .loan-info{font-size:.75rem;color:var(--warn);background:rgba(251,191,36,.1);padding:6px 8px;border-radius:6px;margin-top:6px}
+  .loan-info.reserved{color:#c4a7ff;background:rgba(196,167,255,.1)}
+  .empty{text-align:center;padding:60px 20px;color:var(--muted)}
+  .empty h3{color:var(--text)}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+  .modal-backdrop.open{display:flex}
+  .modal{background:var(--panel);border:1px solid var(--border);border-radius:14px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;padding:24px}
+  .modal.wide{max-width:860px}
+  .modal h2{margin-top:0;font-size:1.2rem}
+  .form-row{margin-bottom:14px}
+  .form-row label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:5px}
+  .form-row input,.form-row select,.form-row textarea{width:100%}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+  .stats{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+  .stat{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;flex:1;min-width:120px}
+  .stat-num{font-size:1.6rem;font-weight:700;color:var(--accent)}
+  .stat-label{font-size:.78rem;color:var(--muted)}
+  .loan-table{width:100%;border-collapse:collapse}
+  .loan-table th,.loan-table td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--border);font-size:.85rem;vertical-align:top}
+  .loan-table th{color:var(--muted);font-weight:600;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em}
+  .overdue{color:var(--danger);font-weight:600}
+  .notice{background:rgba(79,140,255,.1);border:1px solid rgba(79,140,255,.3);padding:12px 16px;border-radius:var(--radius);font-size:.85rem;margin-bottom:16px}
+  .notice.warn{background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.3)}
+  .review-block{background:var(--panel-2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+  .review-block h4{margin:0 0 6px;font-size:.95rem;color:var(--text)}
+  .review-block .review-stars{margin-bottom:8px;font-size:1.2rem;letter-spacing:2px}
+  .review-block .review-text{font-size:.9rem;color:var(--text);white-space:pre-wrap}
+  .review-block .review-empty{color:var(--muted);font-style:italic;font-size:.85rem}
+  .star-rating{font-size:1.4rem;letter-spacing:2px;color:var(--warn);cursor:default}
+  .star-rating .filled{color:var(--warn)}
+  .star-rating .empty{color:var(--border)}
+  .star-rating.editable{cursor:pointer}
+  .star-rating.editable span:hover{color:var(--accent)}
+  .details-layout{display:grid;grid-template-columns:200px 1fr;gap:20px}
+  .details-poster img{width:100%;border-radius:8px;display:block}
+  .details-poster .placeholder{aspect-ratio:2/3;background:var(--panel-2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:3rem;color:var(--muted)}
+  .details-info h2{margin:0 0 4px}
+  .details-info .year{color:var(--muted);font-weight:400}
+  .details-meta{color:var(--muted);font-size:.85rem;margin-bottom:12px}
+  .details-section{margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
+  .details-section h3{margin:0 0 6px;font-size:.9rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .settings-row{display:flex;gap:8px;margin-bottom:12px;align-items:flex-end}
+  .settings-row .form-row{flex:1;margin-bottom:0}
+  .toast{position:fixed;bottom:20px;right:20px;background:var(--panel-2);border:1px solid var(--border);padding:12px 20px;border-radius:var(--radius);font-size:.85rem;z-index:200;opacity:0;transform:translateY(10px);transition:all .2s;pointer-events:none;max-width:400px}
+  .toast.show{opacity:1;transform:translateY(0)}
+  .toast.success{border-color:var(--accent-2);color:var(--accent-2)}
+  .toast.error{border-color:var(--danger);color:var(--danger)}
+  .fetch-buttons{display:flex;gap:8px;flex-wrap:wrap}
+  .auth-status{font-size:.8rem;color:var(--muted);margin-bottom:8px}
+  .auth-status .logged-in{color:var(--accent-2);font-weight:600}
+
+  .list-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+  .list-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+  .list-card-header h3{margin:0;font-size:1.05rem}
+  .list-card-desc{color:var(--muted);font-size:.85rem;margin-bottom:10px}
+  .list-books{display:flex;flex-wrap:wrap;gap:8px}
+  .list-book-chip{background:var(--panel-2);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:.8rem;display:flex;align-items:center;gap:6px;cursor:pointer}
+  .list-book-chip:hover{border-color:var(--accent)}
+  .list-book-chip .remove{color:var(--danger);cursor:pointer;font-weight:700;font-size:.9rem;line-height:1}
+  .list-book-chip .remove:hover{color:#ff8f8f}
+  .list-empty{color:var(--muted);font-size:.8rem;font-style:italic}
+  .list-actions{display:flex;gap:6px}
+
+  .genre-filter{position:relative}
+  .genre-filter-toggle{background:var(--panel);border:1px solid var(--border);color:var(--text);padding:9px 14px;border-radius:var(--radius);cursor:pointer;font-size:.9rem;display:flex;align-items:center;gap:6px}
+  .genre-filter-toggle:hover{border-color:var(--accent)}
+  .genre-count{background:var(--accent);color:#fff;font-size:.7rem;padding:1px 7px;border-radius:20px;font-weight:700;display:none}
+  .genre-count.on{display:inline-block}
+  .genre-filter-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:12px;z-index:50;min-width:240px;max-height:320px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+  .genre-filter-panel.open{display:block}
+  .genre-filter-list label{display:flex;align-items:center;gap:8px;padding:5px 4px;font-size:.85rem;cursor:pointer;border-radius:6px}
+  .genre-filter-list label:hover{background:var(--panel-2)}
+  .genre-filter-list input[type=checkbox]{accent-color:var(--accent);cursor:pointer}
+  .genre-filter-actions{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:flex-end}
+  .genre-empty{color:var(--muted);font-size:.8rem;font-style:italic}
+
+  .featured{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:24px;display:grid;grid-template-columns:180px 1fr;gap:24px;align-items:start;position:relative;overflow:hidden}
+  .featured::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at top right,rgba(79,140,255,.08),transparent 60%);pointer-events:none}
+  .featured-poster{aspect-ratio:2/3;background:var(--panel-2);border-radius:10px;background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:3rem;color:var(--muted);box-shadow:0 4px 16px rgba(0,0,0,.4);position:relative;z-index:1}
+  .featured-info{position:relative;z-index:1;min-width:0}
+  .featured-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+  .featured-label::before{content:"★";color:var(--warn)}
+  .featured h2{margin:0 0 6px;font-size:1.4rem;line-height:1.2;cursor:pointer;transition:color .12s}
+  .featured h2:hover{color:var(--accent)}
+  .featured-meta{color:var(--muted);font-size:.82rem;margin-bottom:12px}
+  .featured-desc{font-size:.88rem;margin-bottom:14px;color:var(--text);line-height:1.6;max-width:65ch}
+  .featured-scores{display:flex;gap:20px;flex-wrap:wrap;font-size:.85rem;margin-bottom:16px;padding-top:12px;border-top:1px solid var(--border)}
+  .featured-scores .score-item{display:flex;align-items:center;gap:6px}
+  .featured-scores .score-label{color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.05em}
+  .featured-scores .score-stars{color:var(--warn);letter-spacing:1px}
+  .featured-scores .score-unrated{color:var(--muted);font-style:italic;font-size:.78rem}
+  .featured-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .featured-cta{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:var(--radius);cursor:pointer;font-weight:600;font-size:.85rem}
+  .featured-cta:hover{filter:brightness(1.1)}
+  .featured-refresh{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:var(--radius);padding:8px 14px;font-size:.85rem;cursor:pointer}
+  .featured-refresh:hover{color:var(--text);border-color:var(--accent)}
+  .list-membership{display:inline-block;background:var(--panel-2);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:.78rem;margin:0 6px 6px 0;color:var(--text)}
+  @media(max-width:600px){
+    .form-grid{grid-template-columns:1fr}
+    .details-layout{grid-template-columns:1fr}
+    .details-poster{max-width:180px}
+    header h1{font-size:1rem}
+    .tab{padding:6px 10px;font-size:.8rem}
+    .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .card-body{padding:10px}
+    .card-title{font-size:.85rem;line-height:1.3}
+    .card-meta{font-size:.72rem;margin-bottom:6px}
+    .badges{gap:4px;margin-bottom:6px}
+    .badge{font-size:.62rem;padding:2px 6px}
+    .card-actions{flex-wrap:wrap;gap:4px}
+    .card-actions button{font-size:.7rem;padding:5px 6px;flex:1 1 calc(50% - 4px);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .loan-info{font-size:.68rem;padding:4px 6px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-logo">
+    <!-- Replace with your own book-lending logo, or delete this img and keep the h1 below -->
+    <h1>The <span>Reading Room</span></h1>
+  </div>
+  <div class="tabs">
+    <button class="tab active" data-tab="library">Library</button>
+    <button class="tab" data-tab="loans">Loans</button>
+    <button class="tab" data-tab="lists">Lists</button>
+    <button class="tab" id="tab-settings" data-tab="settings">Settings</button>
+    <span class="admin-badge" id="admin-badge">ADMIN</span>
+  </div>
+</header>
+
+<main>
+  <section id="view-library">
+    <div id="featured-banner"></div>
+    <div class="stats">
+      <div class="stat"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Total Books</div></div>
+      <div class="stat"><div class="stat-num" id="stat-available">0</div><div class="stat-label">Available</div></div>
+      <div class="stat"><div class="stat-num" id="stat-loaned">0</div><div class="stat-label">On Loan</div></div>
+      <div class="stat"><div class="stat-num" id="stat-overdue">0</div><div class="stat-label">Overdue</div></div>
+    </div>
+    <div class="toolbar">
+      <input class="search" type="text" id="search" placeholder="🔍 Search title, author, genre…">
+      <div class="genre-filter" id="genre-filter">
+        <button type="button" class="genre-filter-toggle" id="genre-filter-toggle">
+          Genres <span class="genre-count" id="genre-count"></span> ▾
+        </button>
+        <div class="genre-filter-panel" id="genre-filter-panel">
+          <div class="genre-filter-list" id="genre-filter-list"></div>
+          <div class="genre-filter-actions">
+            <button type="button" class="btn secondary small" id="genre-clear">Clear all</button>
+          </div>
+        </div>
+      </div>
+      <select id="filter-format">
+        <option value="">All Formats</option>
+        <option>Hardcover</option><option>Paperback</option><option>Trade Paperback</option><option>Audiobook</option><option>Ebook</option>
+      </select>
+      <select id="filter-status">
+        <option value="">All Status</option>
+        <option value="available">Available</option>
+        <option value="loaned">On Loan</option>
+        <option value="reserved">Reserved</option>
+      </select>
+      <select id="sort">
+        <option value="added-desc">Recently Added</option>
+        <option value="title-asc">Title A–Z</option>
+        <option value="year-desc">Year (Newest)</option>
+        <option value="year-asc">Year (Oldest)</option>
+        <option value="scott-rating-desc">Scott's Rating (High–Low)</option>
+        <option value="scott-rating-asc">Scott's Rating (Low–High)</option>
+        <option value="nicole-rating-desc">Nicole's Rating (High–Low)</option>
+        <option value="nicole-rating-asc">Nicole's Rating (Low–High)</option>
+      </select>
+      <button class="btn" id="btn-add-book" style="display:none">+ Add Book</button>
+      <button class="btn secondary" id="btn-data" style="display:none">Backup</button>
+    </div>
+    <div class="grid" id="library-grid"></div>
+  </section>
+
+  <section id="view-loans" style="display:none">
+    <div class="notice">💡 Active loans and future reservations are shown below. Overdue loans are highlighted.</div>
+    <h2 style="font-size:1.1rem">Active &amp; Reserved Loans</h2>
+    <div id="loans-container"></div>
+    <h2 style="font-size:1.1rem;margin-top:28px">Loan History</h2>
+    <div id="history-container"></div>
+  </section>
+
+  <section id="view-lists" style="display:none">
+    <div class="notice">📚 Curated reading lists — themed collections of books from your library.</div>
+    <div class="toolbar">
+      <button class="btn" id="btn-add-list" style="display:none">+ New List</button>
+    </div>
+    <div id="lists-container"></div>
+  </section>
+
+  <section id="view-settings" style="display:none">
+    <h2 style="font-size:1.1rem">Admin Sign-In</h2>
+    <div class="auth-status" id="auth-status">Not signed in.</div>
+    <div class="settings-row">
+      <div class="form-row">
+        <label>Email</label>
+        <input type="email" id="auth-email" placeholder="you@example.com">
+      </div>
+    </div>
+    <div class="settings-row">
+      <div class="form-row">
+        <label>Password</label>
+        <input type="password" id="auth-password" placeholder="Your password">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+      <button class="btn" id="btn-sign-in">Sign In</button>
+      <button class="btn secondary" id="btn-sign-up">Sign Up (first time)</button>
+      <button class="btn secondary" id="btn-sign-out" style="display:none">Sign Out</button>
+    </div>
+
+    <h2 style="font-size:1.1rem;margin-top:28px">Cover Sources</h2>
+    <div class="notice">
+      This app uses <strong>Open Library</strong> for covers and synopses. No API key is required — Open Library is free and keyless. Nothing to configure here.
+    </div>
+    <p style="color:var(--muted);font-size:.8rem;margin-top:16px">
+      Cover lookup: <a href="https://openlibrary.org/search.json" target="_blank" style="color:var(--accent)">openlibrary.org/search.json</a><br>
+      Work records: <a href="https://openlibrary.org" target="_blank" style="color:var(--accent)">openlibrary.org</a>
+    </p>
+  </section>
+</main>
+
+<div class="modal-backdrop" id="book-modal">
+  <div class="modal">
+    <h2 id="book-modal-title">Add Book</h2>
+    <input type="hidden" id="book-id">
+    <div class="form-row"><label>Title *</label><input type="text" id="m-title" placeholder="e.g. The Left Hand of Darkness"></div>
+    <div class="form-grid">
+      <div class="form-row"><label>Year</label><input type="number" id="m-year" placeholder="1969" min="1000" max="2100"></div>
+      <div class="form-row"><label>Format *</label><select id="m-format"><option>Hardcover</option><option>Paperback</option><option>Trade Paperback</option><option>Audiobook</option><option>Ebook</option></select></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row"><label>Author</label><input type="text" id="m-author" placeholder="e.g. Ursula K. Le Guin"></div>
+      <div class="form-row"><label>Genre</label><input type="text" id="m-genre" placeholder="e.g. Science Fiction"></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-row"><label>ISBN</label><input type="text" id="m-isbn" placeholder="e.g. 9780441478125"></div>
+      <div class="form-row"><label>Publisher</label><input type="text" id="m-publisher" placeholder="e.g. Ace Books"></div>
+    </div>
+    <div class="form-row">
+      <label>Cover Image URL</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input type="text" id="m-cover" placeholder="https://… or use a fetch button" style="flex:1;min-width:180px">
+      </div>
+      <div class="fetch-buttons" style="margin-top:8px">
+        <button class="btn secondary small" id="btn-fetch-cover" type="button">Fetch Cover + Synopsis (Open Library)</button>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>Description</label>
+      <textarea id="m-description" rows="3" placeholder="Synopsis…"></textarea>
+      <div class="fetch-buttons" style="margin-top:6px">
+        <button class="btn secondary small" id="btn-fetch-synopsis" type="button">Fetch Synopsis Only (Open Library)</button>
+      </div>
+    </div>
+
+    <div class="review-block">
+      <h4>Scott's Review</h4>
+      <div class="review-stars">
+        <div class="star-rating editable" id="scott-rating-stars" data-value="0">
+          <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+        </div>
+      </div>
+      <label style="display:block;font-size:.8rem;color:var(--muted);margin-bottom:5px">Scott's Review</label>
+      <textarea id="m-review-scott" rows="3" placeholder="Scott's review…"></textarea>
+    </div>
+
+    <div class="review-block">
+      <h4>Nicole's Review</h4>
+      <div class="review-stars">
+        <div class="star-rating editable" id="nicole-rating-stars" data-value="0">
+          <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+        </div>
+      </div>
+      <label style="display:block;font-size:.8rem;color:var(--muted);margin-bottom:5px">Nicole's Review</label>
+      <textarea id="m-review-nicole" rows="3" placeholder="Nicole's review…"></textarea>
+    </div>
+
+    <div class="form-row"><label>Notes (condition, edition, etc.)</label><textarea id="m-notes" rows="2"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn secondary" id="book-cancel">Cancel</button>
+      <button class="btn" id="book-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="details-modal">
+  <div class="modal wide">
+    <div id="details-content"></div>
+    <div class="modal-actions">
+      <button class="btn secondary" id="details-loan" style="display:none">Loan This Book</button>
+      <button class="btn secondary" id="details-close">Close</button>
+      <button class="btn" id="details-edit" style="display:none">Edit</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="loan-modal">
+  <div class="modal">
+    <h2>Loan This Book</h2>
+    <p id="loan-book-name" style="color:var(--muted);margin-top:-8px"></p>
+    <input type="hidden" id="loan-book-id">
+    <div class="form-row"><label>Your Name *</label><input type="text" id="l-borrower" placeholder="e.g. Alex"></div>
+    <div class="form-grid">
+      <div class="form-row"><label>Contact (email/phone)</label><input type="text" id="l-contact" placeholder="Optional"></div>
+      <div class="form-row"><label>Start Date</label><input type="date" id="l-start"></div>
+    </div>
+    <div class="form-row"><label>Return By</label><input type="date" id="l-due"></div>
+    <div class="form-row"><label>Notes</label><input type="text" id="l-notes" placeholder="Optional"></div>
+    <div class="modal-actions">
+      <button class="btn secondary" id="loan-cancel">Cancel</button>
+      <button class="btn" id="loan-save">Confirm Loan</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="list-modal">
+  <div class="modal">
+    <h2 id="list-modal-title">New List</h2>
+    <input type="hidden" id="list-id">
+    <div class="form-row"><label>List Name *</label><input type="text" id="list-name" placeholder="e.g. Best of the 70s"></div>
+    <div class="form-row"><label>Description</label><textarea id="list-description" rows="2" placeholder="Optional description"></textarea></div>
+    <div class="form-row">
+      <label>Add a Book</label>
+      <div style="display:flex;gap:8px">
+        <select id="list-add-book" style="flex:1">
+          <option value="">— Select a book —</option>
+        </select>
+        <button class="btn secondary" id="btn-add-book-to-list" type="button">Add</button>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>Books in this list</label>
+      <div id="list-current-books" class="list-books"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn secondary" id="list-cancel">Cancel</button>
+      <button class="btn" id="list-save">Save List</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="data-modal">
+  <div class="modal">
+    <h2>Backup &amp; Restore</h2>
+    <p style="color:var(--muted);font-size:.85rem">Export your full collection as JSON. Import to restore or move between devices (imports go to Supabase).</p>
+    <div class="form-row"><label>Export</label><button class="btn" id="btn-export">⬇ Download Backup JSON</button></div>
+    <div class="form-row"><label>Import (adds to current Supabase data)</label><input type="file" id="import-file" accept="application/json" style="background:var(--panel-2);padding:8px;border-radius:8px;width:100%"></div>
+    <div class="modal-actions"><button class="btn secondary" id="data-close">Close</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function () {
+  "use strict";
+
+  /* ============================================================
+     CONFIG — replace with your new Supabase project's values
+     ============================================================ */
+  var SUPABASE_URL = "PASTE_YOUR_SUPABASE_URL_HERE";
+  var SUPABASE_KEY = "PASTE_YOUR_PUBLISHABLE_KEY_HERE";
+
+  var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  var DB = { books: [], loans: [], lists: [], list_books: [] };
+  var currentUser = null;
+  var pendingListBooks = [];
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function toast(msg, type) {
+    var el = $("toast");
+    el.textContent = msg;
+    el.className = "toast show " + (type || "");
+    setTimeout(function () { el.className = "toast"; }, 3200);
+  }
+  function todayStr() { return new Date().toISOString().slice(0, 10); }
+  function isAdmin() { return !!currentUser; }
+
+  /* ============================================================
+     LOAN STATUS HELPERS
+     ============================================================ */
+  function loanStatus(loan) {
+    if (loan.returned_date) return "returned";
+    var today = todayStr();
+    if (loan.start_date && loan.start_date > today) return "reserved";
+    return "active";
+  }
+
+  function activeLoanFor(bookId) {
+    return DB.loans.find(function (l) {
+      return l.book_id === bookId && loanStatus(l) === "active";
+    });
+  }
+
+  function reservationFor(bookId) {
+    return DB.loans
+      .filter(function (l) {
+        return l.book_id === bookId && loanStatus(l) === "reserved";
+      })
+      .sort(function (a, b) { return (a.start_date || "").localeCompare(b.start_date || ""); })[0];
+  }
+
+  function isBookAvailableNow(bookId) {
+    return !activeLoanFor(bookId);
+  }
+
+  function overlappingLoan(bookId, startDate, dueDate) {
+    var startA = startDate || todayStr();
+    var dueA = dueDate || startA;
+    return DB.loans.find(function (l) {
+      if (l.book_id !== bookId) return false;
+      if (l.returned_date) return false;
+      var startB = l.start_date || l.loan_date || todayStr();
+      var dueB = l.due_date || "9999-12-31";
+      return startA <= dueB && startB <= dueA;
+    });
+  }
+
+  /* ============================================================
+     DATA LAYER
+     ============================================================ */
+  async function loadFromSupabase() {
+    var bRes = await supabase.from("books").select("*").order("added_at", { ascending: false });
+    if (bRes.error) throw new Error("Failed to load books: " + bRes.error.message);
+
+    var loanSource = isAdmin() ? "loans" : "loans_public";
+    var lRes = await supabase.from(loanSource).select("*").order("loan_date", { ascending: false });
+    if (lRes.error) throw new Error("Failed to load loans: " + lRes.error.message);
+
+    var liRes = await supabase.from("lists").select("*").order("created_at", { ascending: true });
+    if (liRes.error) throw new Error("Failed to load lists: " + liRes.error.message);
+
+    var lbRes = await supabase.from("list_books").select("*").order("position", { ascending: true });
+    if (lbRes.error) throw new Error("Failed to load list memberships: " + lbRes.error.message);
+
+    DB.books = bRes.data || [];
+    DB.loans = lRes.data || [];
+    DB.lists = liRes.data || [];
+    DB.list_books = lbRes.data || [];
+  }
+
+  async function refresh() {
+    try {
+      await loadFromSupabase();
+      renderAll();
+      updateAuthUi();
+    } catch (err) {
+      toast("Data load failed: " + err.message, "error");
+    }
+  }
+
+  /* ============================================================
+     AUTH
+     ============================================================ */
+  function updateAuthUi() {
+    var status = $("auth-status");
+    if (currentUser) {
+      status.innerHTML = 'Signed in as <span class="logged-in">' + esc(currentUser.email || currentUser.id) + "</span>";
+      $("btn-sign-out").style.display = "inline-block";
+      $("btn-sign-in").style.display = "none";
+      $("btn-sign-up").style.display = "none";
+      $("admin-badge").className = "admin-badge on";
+      $("btn-add-book").style.display = "inline-block";
+      $("btn-data").style.display = "inline-block";
+      $("btn-add-list").style.display = "inline-block";
+    } else {
+      status.textContent = "Not signed in. Sign in to manage the collection.";
+      $("btn-sign-out").style.display = "none";
+      $("btn-sign-in").style.display = "inline-block";
+      $("btn-sign-up").style.display = "inline-block";
+      $("admin-badge").className = "admin-badge";
+      $("btn-add-book").style.display = "none";
+      $("btn-data").style.display = "none";
+      $("btn-add-list").style.display = "none";
+    }
+  }
+
+  async function initAuth() {
+    var sessionRes = await supabase.auth.getSession();
+    if (sessionRes.data && sessionRes.data.session) {
+      currentUser = sessionRes.data.session.user;
+    }
+    supabase.auth.onAuthStateChange(function (_event, session) {
+      currentUser = session ? session.user : null;
+      updateAuthUi();
+      refresh();
+    });
+  }
+
+  async function signIn() {
+    var email = $("auth-email").value.trim();
+    var password = $("auth-password").value;
+    if (!email || !password) { toast("Enter email and password", "error"); return; }
+    var res = await supabase.auth.signInWithPassword({ email: email, password: password });
+    if (res.error) { toast("Sign-in failed: " + res.error.message, "error"); return; }
+    currentUser = res.data.user;
+    toast("Signed in", "success");
+    updateAuthUi();
+    await refresh();
+  }
+
+  async function signUp() {
+    var email = $("auth-email").value.trim();
+    var password = $("auth-password").value;
+    if (!email || !password) { toast("Enter email and password", "error"); return; }
+    var res = await supabase.auth.signUp({ email: email, password: password });
+    if (res.error) { toast("Sign-up failed: " + res.error.message, "error"); return; }
+    toast("Account created. Check your email if confirmation is required, then sign in.", "success");
+  }
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    currentUser = null;
+    updateAuthUi();
+    await refresh();
+    toast("Signed out", "success");
+  }
+
+  /* ============================================================
+     RENDER — library
+     ============================================================ */
+  function renderAll() {
+    renderLibrary();
+    renderLoans();
+    renderLists();
+  }
+
+  /* ============================================================
+     GENRE FILTER
+     ============================================================ */
+  var selectedGenres = new Set();
+  var genrePanelOpen = false;
+
+  function genreTags(book) {
+    if (!book.genre) return [];
+    return book.genre
+      .split(/[,/&]/)
+      .map(function (t) { return t.trim(); })
+      .filter(function (t) { return t.length > 0; });
+  }
+
+  function allGenreTags() {
+    var seen = {};
+    DB.books.forEach(function (b) {
+      genreTags(b).forEach(function (t) {
+        var key = t.toLowerCase();
+        if (!seen[key]) seen[key] = t;
+      });
+    });
+    return Object.keys(seen).sort().map(function (k) { return seen[k]; });
+  }
+
+  function bookMatchesGenres(book) {
+    if (selectedGenres.size === 0) return true;
+    var tags = genreTags(book).map(function (t) { return t.toLowerCase(); });
+    return Array.from(selectedGenres).some(function (g) { return tags.indexOf(g) !== -1; });
+  }
+
+  function renderGenreFilter() {
+    var list = $("genre-filter-list");
+    var tags = allGenreTags();
+    if (!tags.length) {
+      list.innerHTML = '<div class="genre-empty">No genres in your collection yet.</div>';
+    } else {
+      list.innerHTML = tags.map(function (t) {
+        var key = t.toLowerCase();
+        var checked = selectedGenres.has(key) ? " checked" : "";
+        return '<label><input type="checkbox" data-genre="' + esc(key) + '"' + checked + "> " + esc(t) + "</label>";
+      }).join("");
+    }
+    var count = $("genre-count");
+    if (selectedGenres.size > 0) {
+      count.textContent = selectedGenres.size;
+      count.className = "genre-count on";
+    } else {
+      count.textContent = "";
+      count.className = "genre-count";
+    }
+    var panel = $("genre-filter-panel");
+    panel.classList.toggle("open", genrePanelOpen);
+  }
+
+  /* ============================================================
+     SORT TITLE — ignore leading articles
+     ============================================================ */
+  function sortTitle(title) {
+    if (!title) return "";
+    return title
+      .replace(/^(the|a|an|le|la|les|el|los|las|der|die|das)\s+/i, "")
+      .toLowerCase();
+  }
+
+  function getFilteredBooks() {
+    var q = $("search").value.toLowerCase().trim();
+    var fmt = $("filter-format").value;
+    var status = $("filter-status").value;
+    var sort = $("sort").value;
+    var list = DB.books.filter(function (b) {
+      var hay = (b.title + " " + (b.author || "") + " " + (b.genre || "")).toLowerCase();
+      if (q && hay.indexOf(q) === -1) return false;
+      if (fmt && b.format !== fmt) return false;
+      if (!bookMatchesGenres(b)) return false;
+      if (status === "available" && !isBookAvailableNow(b.id)) return false;
+      if (status === "loaned" && !activeLoanFor(b.id)) return false;
+      if (status === "reserved" && !reservationFor(b.id)) return false;
+      return true;
+    });
+    list.sort(function (a, b) {
+      switch (sort) {
+        case "title-asc": return sortTitle(a.title).localeCompare(sortTitle(b.title));
+        case "year-desc": return (b.year || 0) - (a.year || 0);
+        case "year-asc":  return (a.year || 0) - (b.year || 0);
+        case "scott-rating-desc":
+        case "scott-rating-asc":
+        case "nicole-rating-desc":
+        case "nicole-rating-asc": {
+          var field = sort.indexOf("scott") === 0 ? "scott_rating" : "nicole_rating";
+          var desc = sort.indexOf("-desc") !== -1;
+          var ra = a[field] || 0;
+          var rb = b[field] || 0;
+          if (ra === 0 && rb !== 0) return 1;
+          if (rb === 0 && ra !== 0) return -1;
+          if (ra !== rb) return desc ? rb - ra : ra - rb;
+          return sortTitle(a.title).localeCompare(sortTitle(b.title));
+        }
+        default: return new Date(b.added_at || 0) - new Date(a.added_at || 0);
+      }
+    });
+    return list;
+  }
+
+  /* ============================================================
+     FEATURED BOOK
+     ============================================================ */
+  function pickFeatured() {
+    if (!DB.books.length) return null;
+    var pool = DB.books.filter(function (b) { return b.description || b.cover; });
+    if (!pool.length) pool = DB.books;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  function renderFeatured(forceNew) {
+    var el = $("featured-banner");
+    if (!el) return;
+    if (!DB.books.length) { el.innerHTML = ""; return; }
+
+    if (!forceNew && el.dataset.bookId) {
+      var existing = DB.books.find(function (b) { return b.id === el.dataset.bookId; });
+      if (existing) { paintFeatured(el, existing); return; }
+    }
+    var pick = pickFeatured();
+    if (pick) { el.dataset.bookId = pick.id; paintFeatured(el, pick); }
+  }
+
+  function paintFeatured(el, b) {
+    var coverStyle = b.cover ? 'style="background-image:url(\'' + esc(b.cover) + '\')"' : "";
+    var scottStars = b.scott_rating ? "★".repeat(b.scott_rating) + "☆".repeat(5 - b.scott_rating) : "";
+    var nicoleStars = b.nicole_rating ? "★".repeat(b.nicole_rating) + "☆".repeat(5 - b.nicole_rating) : "";
+    var desc = b.description
+      ? (b.description.length > 300 ? b.description.slice(0, 297) + "…" : b.description)
+      : "No description yet.";
+    var metaParts = [b.format, b.genre, b.author ? "by " + b.author : null].filter(Boolean);
+
+    el.innerHTML =
+      '<div class="featured">' +
+        '<div class="featured-poster" ' + coverStyle + '>' + (b.cover ? "" : "📖") + "</div>" +
+        '<div class="featured-info">' +
+          '<div class="featured-label">On the nightstand</div>' +
+          '<h2 data-details="' + b.id + '">' + esc(b.title) +
+            (b.year ? " <span style='color:var(--muted);font-weight:400'>(" + esc(b.year) + ")</span>" : "") +
+          "</h2>" +
+          '<div class="featured-meta">' + esc(metaParts.join(" · ")) + "</div>" +
+          '<div class="featured-desc">' + esc(desc) + "</div>" +
+          '<div class="featured-scores">' +
+            '<div class="score-item">' +
+              '<span class="score-label">Scott</span>' +
+              (scottStars ? '<span class="score-stars">' + scottStars + "</span>" : '<span class="score-unrated">not rated</span>') +
+            "</div>" +
+            '<div class="score-item">' +
+              '<span class="score-label">Nicole</span>' +
+              (nicoleStars ? '<span class="score-stars">' + nicoleStars + "</span>" : '<span class="score-unrated">not rated</span>') +
+            "</div>" +
+          "</div>" +
+          '<div class="featured-actions">' +
+            '<button type="button" class="featured-cta" data-details="' + b.id + '">View details</button>' +
+            '<button type="button" class="featured-refresh" id="btn-featured-refresh">🎲 Pick another</button>' +
+          "</div>" +
+        "</div>" +
+      "</div>";
+
+    var btn = $("btn-featured-refresh");
+    if (btn) btn.addEventListener("click", function () { renderFeatured(true); });
+
+    el.querySelectorAll("[data-details]").forEach(function (node) {
+      node.addEventListener("click", function () { showDetails(b.id); });
+    });
+  }
+
+  function renderLibrary() {
+    renderGenreFilter();
+    renderFeatured(false);
+    var total = DB.books.length;
+    var loaned = DB.books.filter(function (b) { return activeLoanFor(b.id); }).length;
+    var overdue = DB.loans.filter(function (l) {
+      return loanStatus(l) === "active" && l.due_date && l.due_date < todayStr();
+    }).length;
+    $("stat-total").textContent = total;
+    $("stat-available").textContent = total - loaned;
+    $("stat-loaned").textContent = loaned;
+    $("stat-overdue").textContent = overdue;
+
+    var grid = $("library-grid");
+    var books = getFilteredBooks();
+    if (!books.length) {
+      grid.innerHTML = '<div class="empty" style="grid-column:1/-1"><h3>' +
+        (total === 0 ? "Your library is empty" : "No matches") + "</h3><p>" +
+        (total === 0 ? (isAdmin() ? 'Click "+ Add Book" to start cataloguing.' : "The owner hasn't added any books yet.") : "Try adjusting your filters.") +
+        "</p></div>";
+      return;
+    }
+    grid.innerHTML = books.map(function (b) {
+      var active = activeLoanFor(b.id);
+      var reserved = reservationFor(b.id);
+      var coverStyle = b.cover ? 'style="background-image:url(\'' + esc(b.cover) + '\')"' : "";
+      var statusBadge = active
+        ? '<span class="badge loaned">On Loan</span>'
+        : (reserved ? '<span class="badge reserved">Reserved</span>' : '<span class="badge available">Available</span>');
+      var loanInfo = "";
+      if (active) {
+        var who = isAdmin() ? "👤 " + esc(active.borrower) + " · " : "";
+        loanInfo = '<div class="loan-info">' + who + "due " + esc(active.due_date || "—") + "</div>";
+      } else if (reserved) {
+        var whoR = isAdmin() ? "👤 " + esc(reserved.borrower) + " · " : "";
+        loanInfo = '<div class="loan-info reserved">' + whoR + "reserved from " + esc(reserved.start_date) + "</div>";
+      }
+      return '<div class="card" data-details="' + b.id + '">' +
+        '<div class="cover" ' + coverStyle + '>' + (b.cover ? "" : "📖") + "</div>" +
+        '<div class="card-body">' +
+          '<div class="card-title">' + esc(b.title) + "</div>" +
+          '<div class="card-meta">' + (b.year ? esc(b.year) : "") +
+            (b.author ? " · " + esc(b.author) : "") + "</div>" +
+          '<div class="badges">' +
+            '<span class="badge format">' + esc(b.format) + "</span>" +
+            (b.genre ? '<span class="badge" style="background:#2b2540;color:#c4a7ff">' + esc(b.genre) + "</span>" : "") +
+            statusBadge +
+          "</div>" +
+          loanInfo +
+          '<div class="card-actions">' +
+            (active
+              ? (isAdmin() ? '<button type="button" class="btn secondary" data-return="' + b.id + '">Return</button>' : '<button type="button" class="btn secondary" disabled>On Loan</button>')
+              : '<button type="button" class="btn" data-loan="' + b.id + '">Loan</button>') +
+            (isAdmin() ? '<button type="button" class="btn secondary" data-edit="' + b.id + '">Edit</button>' +
+                       '<button type="button" class="btn secondary" data-delete="' + b.id + '">🗑</button>' : '') +
+          "</div>" +
+        "</div>" +
+      "</div>";
+    }).join("");
+  }
+
+  /* ============================================================
+     RENDER — loans
+     ============================================================ */
+  function renderLoans() {
+    var activeOrReserved = DB.loans.filter(function (l) {
+      var s = loanStatus(l);
+      return s === "active" || s === "reserved";
+    });
+    var history = DB.loans.filter(function (l) { return l.returned_date; });
+
+    var activeEl = $("loans-container");
+    if (!activeOrReserved.length) {
+      activeEl.innerHTML = '<div class="empty"><h3>No active loans or reservations</h3><p>Loan a book from the Library tab.</p></div>';
+    } else {
+      var headers = "<th>Book</th>";
+      if (isAdmin()) headers += "<th>Borrower</th><th>Contact</th>";
+      headers += "<th>Status</th><th>Start</th><th>Due</th>";
+      if (isAdmin()) headers += "<th>Action</th>";
+
+      activeEl.innerHTML = '<table class="loan-table"><thead><tr>' + headers +
+        "</tr></thead><tbody>" + activeOrReserved.map(function (l) {
+          var b = DB.books.find(function (x) { return x.id === l.book_id; });
+          var status = loanStatus(l);
+          var overdue = status === "active" && l.due_date && l.due_date < todayStr();
+          var row = "<tr>";
+          row += "<td><strong>" + esc(b ? b.title : "(deleted)") + "</strong></td>";
+          if (isAdmin()) {
+            row += "<td>" + esc(l.borrower || "—") + "</td>";
+            row += "<td>" + esc(l.contact || "—") + "</td>";
+          }
+          row += '<td>' + (status === "reserved"
+            ? '<span class="badge reserved">Reserved</span>'
+            : (overdue ? '<span class="overdue">Overdue</span>' : '<span class="badge loaned">On Loan</span>')) + "</td>";
+          row += "<td>" + esc(l.start_date || l.loan_date || "—") + "</td>";
+          row += '<td class="' + (overdue ? "overdue" : "") + '">' + esc(l.due_date || "—") + "</td>";
+          if (isAdmin()) {
+            row += '<td><button type="button" class="btn small" data-return="' + l.book_id + '">Return</button></td>';
+          }
+          row += "</tr>";
+          return row;
+        }).join("") + "</tbody></table>";
+    }
+
+    var histEl = $("history-container");
+    if (!history.length) {
+      histEl.innerHTML = '<p style="color:var(--muted);font-size:.85rem">No returned loans yet.</p>';
+    } else {
+      var hHeaders = "<th>Book</th>";
+      if (isAdmin()) hHeaders += "<th>Borrower</th>";
+      hHeaders += "<th>Loaned</th><th>Returned</th>";
+      histEl.innerHTML = '<table class="loan-table"><thead><tr>' + hHeaders +
+        "</tr></thead><tbody>" + history.map(function (l) {
+          var b = DB.books.find(function (x) { return x.id === l.book_id; });
+          var row = "<tr><td>" + esc(b ? b.title : "(deleted)") + "</td>";
+          if (isAdmin()) row += "<td>" + esc(l.borrower || "—") + "</td>";
+          row += "<td>" + esc(l.start_date || l.loan_date || "—") + "</td>";
+          row += "<td>" + esc(l.returned_date) + "</td></tr>";
+          return row;
+        }).join("") + "</tbody></table>";
+    }
+  }
+
+  /* ============================================================
+     RENDER — lists
+     ============================================================ */
+  function renderLists() {
+    var container = $("lists-container");
+    if (!DB.lists.length) {
+      container.innerHTML = '<div class="empty"><h3>No lists yet</h3><p>' +
+        (isAdmin() ? 'Click "+ New List" to create your first curated collection.' : "The owner hasn't created any lists yet.") +
+        "</p></div>";
+      return;
+    }
+    container.innerHTML = DB.lists.map(function (lst) {
+      var memberships = DB.list_books.filter(function (lb) { return lb.list_id === lst.id; });
+      var chips = memberships.map(function (lb) {
+        var b = DB.books.find(function (x) { return x.id === lb.book_id; });
+        if (!b) return "";
+        return '<span class="list-book-chip" data-details="' + b.id + '">' +
+          esc(b.title) +
+          (isAdmin() ? '<span class="remove" data-remove-from-list="' + lb.id + '" title="Remove">×</span>' : '') +
+        "</span>";
+      }).join("");
+      return '<div class="list-card">' +
+        '<div class="list-card-header">' +
+          "<div><h3>" + esc(lst.name) + "</h3>" +
+          (lst.description ? '<div class="list-card-desc">' + esc(lst.description) + "</div>" : "") +
+          "</div>" +
+          (isAdmin()
+            ? '<div class="list-actions">' +
+                '<button type="button" class="btn secondary small" data-edit-list="' + lst.id + '">Edit</button>' +
+                '<button type="button" class="btn secondary small" data-delete-list="' + lst.id + '">🗑</button>' +
+              "</div>"
+            : "") +
+        "</div>" +
+        (chips ? '<div class="list-books">' + chips + "</div>" : '<div class="list-empty">No books in this list yet.</div>') +
+      "</div>";
+    }).join("");
+  }
+
+  /* ============================================================
+     DETAILS
+     ============================================================ */
+  function starsHtml(rating) {
+    var r = rating || 0;
+    var s = "";
+    for (var i = 1; i <= 5; i++) {
+      s += '<span class="' + (i <= r ? "filled" : "empty") + '">★</span>';
+    }
+    return s;
+  }
+  function reviewBlock(name, rating, review) {
+    var r = rating || 0;
+    var hasText = review && review.trim();
+    return '<div class="review-block">' +
+      "<h4>" + esc(name) + "</h4>" +
+      '<div class="review-stars star-rating">' + starsHtml(r) +
+        ' <span style="font-size:.8rem;color:var(--muted)">(' + r + '/5)</span></div>' +
+      (hasText
+        ? '<div class="review-text">' + esc(review) + "</div>"
+        : '<div class="review-empty">No review yet.</div>') +
+    "</div>";
+  }
+
+  function showDetails(bookId) {
+    var b = DB.books.find(function (x) { return x.id === bookId; });
+    if (!b) return;
+    var content =
+      '<div class="details-layout">' +
+        '<div class="details-poster">' +
+          (b.cover ? '<img src="' + esc(b.cover) + '" alt="Cover">' : '<div class="placeholder">📖</div>') +
+        "</div>" +
+        '<div class="details-info">' +
+          '<h2>' + esc(b.title) + (b.year ? ' <span class="year">(' + esc(b.year) + ')</span>' : "") + "</h2>" +
+          '<div class="details-meta">' +
+            esc(b.format) + (b.genre ? " · " + esc(b.genre) : "") + (b.author ? " · by " + esc(b.author) : "") +
+            (b.publisher ? " · " + esc(b.publisher) : "") +
+            (b.isbn ? " · ISBN " + esc(b.isbn) : "") +
+          "</div>" +
+          (b.description ? '<div class="details-section"><h3>Description</h3><p>' + esc(b.description) + "</p></div>" : "") +
+          '<div class="details-section"><h3>Reviews</h3>' +
+            reviewBlock("Scott's Review", b.scott_rating, b.scott_review) +
+            reviewBlock("Nicole's Review", b.nicole_rating, b.nicole_review) +
+          "</div>" +
+          (b.notes ? '<div class="details-section"><h3>Notes</h3><p>' + esc(b.notes) + "</p></div>" : "") +
+        "</div>" +
+      "</div>";
+    $("details-content").innerHTML = content;
+    $("details-edit").style.display = isAdmin() ? "inline-block" : "none";
+    $("details-edit").dataset.id = bookId;
+
+    var loanBtn = $("details-loan");
+    loanBtn.dataset.id = bookId;
+    if (activeLoanFor(bookId)) {
+      loanBtn.style.display = "none";
+    } else {
+      loanBtn.style.display = "inline-block";
+      loanBtn.textContent = "Loan This Book";
+    }
+
+    openModal("details-modal");
+  }
+
+  /* ============================================================
+     MODAL HELPERS
+     ============================================================ */
+  function openModal(id) { $(id).classList.add("open"); }
+  function closeModal(id) { $(id).classList.remove("open"); }
+
+  function setRatingStars(elId, v) {
+    var el = $(elId);
+    el.dataset.value = v;
+    el.querySelectorAll("span").forEach(function (s) {
+      s.style.color = parseInt(s.dataset.v, 10) <= v ? "var(--warn)" : "var(--border)";
+    });
+  }
+
+  /* ============================================================
+     BOOK CRUD
+     ============================================================ */
+  function openAddModal() {
+    if (!isAdmin()) { toast("Sign in to add books", "error"); return; }
+    $("book-modal-title").textContent = "Add Book";
+    ["book-id","m-title","m-year","m-author","m-genre","m-isbn","m-publisher","m-cover","m-description","m-review-scott","m-review-nicole","m-notes"].forEach(function (id) {
+      $(id).value = "";
+    });
+    $("m-format").value = "Paperback";
+    setRatingStars("scott-rating-stars", 0);
+    setRatingStars("nicole-rating-stars", 0);
+    openModal("book-modal");
+    setTimeout(function () { $("m-title").focus(); }, 50);
+  }
+
+  function openEditModal(id) {
+    if (!isAdmin()) { toast("Sign in to edit books", "error"); return; }
+    var b = DB.books.find(function (x) { return x.id === id; });
+    if (!b) return;
+    closeModal("details-modal");
+    $("book-modal-title").textContent = "Edit Book";
+    $("book-id").value = b.id;
+    $("m-title").value = b.title || "";
+    $("m-year").value = b.year || "";
+    $("m-author").value = b.author || "";
+    $("m-genre").value = b.genre || "";
+    $("m-isbn").value = b.isbn || "";
+    $("m-publisher").value = b.publisher || "";
+    $("m-format").value = b.format || "Paperback";
+    $("m-cover").value = b.cover || "";
+    $("m-description").value = b.description || "";
+    $("m-review-scott").value = b.scott_review || "";
+    $("m-review-nicole").value = b.nicole_review || "";
+    $("m-notes").value = b.notes || "";
+    setRatingStars("scott-rating-stars", b.scott_rating || 0);
+    setRatingStars("nicole-rating-stars", b.nicole_rating || 0);
+    openModal("book-modal");
+  }
+
+  async function saveBook() {
+    if (!isAdmin()) { toast("Sign in to save", "error"); return; }
+    var id = $("book-id").value;
+    var title = $("m-title").value.trim();
+    if (!title) { alert("Title is required."); return; }
+    var payload = {
+      title: title,
+      year: $("m-year").value ? parseInt($("m-year").value, 10) : null,
+      author: $("m-author").value.trim() || null,
+      genre: $("m-genre").value.trim() || null,
+      isbn: $("m-isbn").value.trim() || null,
+      publisher: $("m-publisher").value.trim() || null,
+      format: $("m-format").value,
+      cover: $("m-cover").value.trim() || null,
+      description: $("m-description").value.trim() || null,
+      scott_rating: parseInt($("scott-rating-stars").dataset.value, 10) || 0,
+      scott_review: $("m-review-scott").value.trim() || null,
+      nicole_rating: parseInt($("nicole-rating-stars").dataset.value, 10) || 0,
+      nicole_review: $("m-review-nicole").value.trim() || null,
+      notes: $("m-notes").value.trim() || null
+    };
+    var btn = $("book-save");
+    btn.disabled = true; btn.textContent = "Saving…";
+    var res;
+    if (id) {
+      res = await supabase.from("books").update(payload).eq("id", id);
+    } else {
+      res = await supabase.from("books").insert(payload);
+    }
+    btn.disabled = false; btn.textContent = "Save";
+    if (res.error) { toast("Save failed: " + res.error.message, "error"); return; }
+    closeModal("book-modal");
+    await refresh();
+    toast("Book saved", "success");
+  }
+
+  async function deleteBook(id) {
+    if (!isAdmin()) { toast("Sign in to delete", "error"); return; }
+    var b = DB.books.find(function (x) { return x.id === id; });
+    if (!b) return;
+    if (activeLoanFor(id)) { alert("This book is currently on loan. Return it first."); return; }
+    if (!confirm('Delete "' + b.title + '"? This cannot be undone.')) return;
+    var res = await supabase.from("books").delete().eq("id", id);
+    if (res.error) { toast("Delete failed: " + res.error.message, "error"); return; }
+    await refresh();
+    toast("Book deleted", "success");
+  }
+
+  /* ============================================================
+     LOAN FLOW
+     ============================================================ */
+  function openLoanModal(bookId) {
+    var b = DB.books.find(function (x) { return x.id === bookId; });
+    if (!b) return;
+    $("loan-book-id").value = bookId;
+    $("loan-book-name").textContent = '"' + b.title + '" (' + b.format + ")";
+    $("l-borrower").value = "";
+    $("l-contact").value = "";
+    $("l-notes").value = "";
+    var today = todayStr();
+    $("l-start").value = today;
+    var d = new Date(); d.setDate(d.getDate() + 21);
+    $("l-due").value = d.toISOString().slice(0, 10);
+    openModal("loan-modal");
+    setTimeout(function () { $("l-borrower").focus(); }, 50);
+  }
+
+  async function saveLoan() {
+    var bookId = $("loan-book-id").value;
+    var borrower = $("l-borrower").value.trim();
+    var startDate = $("l-start").value || todayStr();
+    var dueDate = $("l-due").value || null;
+    if (!borrower) { alert("Your name is required."); return; }
+    if (dueDate && dueDate < startDate) { alert("Return date cannot be before the start date."); return; }
+
+    var conflict = overlappingLoan(bookId, startDate, dueDate);
+    if (conflict) {
+      var conflictBook = DB.books.find(function (x) { return x.id === bookId; });
+      var conflictWho = isAdmin() ? (" by " + conflict.borrower) : "";
+      var conflictEnd = conflict.due_date || "an indefinite date";
+      alert('Sorry — "' + (conflictBook ? conflictBook.title : "this book") +
+        '" is already booked' + conflictWho + " from " +
+        (conflict.start_date || conflict.loan_date) + " to " + conflictEnd +
+        ". Pick different dates.");
+      return;
+    }
+
+    var payload = {
+      book_id: bookId,
+      borrower: borrower,
+      contact: $("l-contact").value.trim() || null,
+      start_date: startDate,
+      loan_date: todayStr(),
+      due_date: dueDate,
+      notes: $("l-notes").value.trim() || null
+    };
+    var btn = $("loan-save");
+    btn.disabled = true; btn.textContent = "Recording…";
+    var res = await supabase.from("loans").insert(payload);
+    btn.disabled = false; btn.textContent = "Confirm Loan";
+    if (res.error) { toast("Loan failed: " + res.error.message, "error"); return; }
+    closeModal("loan-modal");
+    closeModal("details-modal");
+    await refresh();
+    toast(startDate > todayStr() ? "Reservation recorded" : "Loan recorded — enjoy the read!", "success");
+  }
+
+  async function returnBook(bookId) {
+    if (!isAdmin()) { toast("Only the owner can mark books returned", "error"); return; }
+    var loan = activeLoanFor(bookId);
+    if (!loan) {
+      loan = DB.loans.find(function (l) { return l.book_id === bookId && !l.returned_date; });
+    }
+    if (!loan) return;
+    var book = DB.books.find(function (b) { return b.id === bookId; });
+    if (!confirm('Mark "' + (book ? book.title : "book") + '" as returned?')) return;
+    var res = await supabase.from("loans").update({ returned_date: todayStr() }).eq("id", loan.id);
+    if (res.error) { toast("Return failed: " + res.error.message, "error"); return; }
+    await refresh();
+    toast("Book returned", "success");
+  }
+
+  /* ============================================================
+     LIST CRUD
+     ============================================================ */
+  function openNewListModal() {
+    if (!isAdmin()) { toast("Sign in to create lists", "error"); return; }
+    $("list-modal-title").textContent = "New List";
+    $("list-id").value = "";
+    $("list-name").value = "";
+    $("list-description").value = "";
+    pendingListBooks = [];
+    populateListBookSelect();
+    renderPendingListBooks();
+    openModal("list-modal");
+    setTimeout(function () { $("list-name").focus(); }, 50);
+  }
+
+  function openEditListModal(listId) {
+    if (!isAdmin()) { toast("Sign in to edit lists", "error"); return; }
+    var lst = DB.lists.find(function (x) { return x.id === listId; });
+    if (!lst) return;
+    $("list-modal-title").textContent = "Edit List";
+    $("list-id").value = lst.id;
+    $("list-name").value = lst.name || "";
+    $("list-description").value = lst.description || "";
+    pendingListBooks = DB.list_books
+      .filter(function (lb) { return lb.list_id === listId; })
+      .sort(function (a, b) { return (a.position || 0) - (b.position || 0); })
+      .map(function (lb) { return lb.book_id; });
+    populateListBookSelect();
+    renderPendingListBooks();
+    openModal("list-modal");
+  }
+
+  function populateListBookSelect() {
+    var sel = $("list-add-book");
+    var sorted = DB.books.slice().sort(function (a, b) { return sortTitle(a.title).localeCompare(sortTitle(b.title)); });
+    sel.innerHTML = '<option value="">— Select a book —</option>' +
+      sorted.map(function (b) {
+        var already = pendingListBooks.indexOf(b.id) !== -1;
+        return '<option value="' + b.id + '"' + (already ? " disabled" : "") + ">" +
+          esc(b.title) + (b.year ? " (" + b.year + ")" : "") +
+          (already ? " — already added" : "") +
+        "</option>";
+      }).join("");
+  }
+
+  function renderPendingListBooks() {
+    var container = $("list-current-books");
+    if (!pendingListBooks.length) {
+      container.innerHTML = '<span class="list-empty">No books added yet.</span>';
+      return;
+    }
+    container.innerHTML = pendingListBooks.map(function (bid) {
+      var b = DB.books.find(function (x) { return x.id === bid; });
+      if (!b) return "";
+      return '<span class="list-book-chip">' +
+        esc(b.title) +
+        '<span class="remove" data-remove-pending="' + bid + '" title="Remove">×</span>' +
+      "</span>";
+    }).join("");
+  }
+
+  async function saveList() {
+    if (!isAdmin()) { toast("Sign in to save lists", "error"); return; }
+    var id = $("list-id").value;
+    var name = $("list-name").value.trim();
+    if (!name) { alert("List name is required."); return; }
+    var description = $("list-description").value.trim() || null;
+
+    var btn = $("list-save");
+    btn.disabled = true; btn.textContent = "Saving…";
+
+    var listId = id;
+    if (id) {
+      var upRes = await supabase.from("lists").update({ name: name, description: description }).eq("id", id);
+      if (upRes.error) { btn.disabled = false; btn.textContent = "Save List"; toast("Save failed: " + upRes.error.message, "error"); return; }
+    } else {
+      var inRes = await supabase.from("lists").insert({ name: name, description: description }).select().single();
+      if (inRes.error) { btn.disabled = false; btn.textContent = "Save List"; toast("Save failed: " + inRes.error.message, "error"); return; }
+      listId = inRes.data.id;
+    }
+
+    var delRes = await supabase.from("list_books").delete().eq("list_id", listId);
+    if (delRes.error) { btn.disabled = false; btn.textContent = "Save List"; toast("Save failed: " + delRes.error.message, "error"); return; }
+
+    if (pendingListBooks.length) {
+      var rows = pendingListBooks.map(function (bid, idx) {
+        return { list_id: listId, book_id: bid, position: idx };
+      });
+      var insRes = await supabase.from("list_books").insert(rows);
+      if (insRes.error) { btn.disabled = false; btn.textContent = "Save List"; toast("Save failed: " + insRes.error.message, "error"); return; }
+    }
+
+    btn.disabled = false; btn.textContent = "Save List";
+    closeModal("list-modal");
+    await refresh();
+    toast("List saved", "success");
+  }
+
+  async function deleteList(listId) {
+    if (!isAdmin()) { toast("Sign in to delete lists", "error"); return; }
+    var lst = DB.lists.find(function (x) { return x.id === listId; });
+    if (!lst) return;
+    if (!confirm('Delete list "' + lst.name + '"? Books themselves are not deleted.')) return;
+    var res = await supabase.from("lists").delete().eq("id", listId);
+    if (res.error) { toast("Delete failed: " + res.error.message, "error"); return; }
+    await refresh();
+    toast("List deleted", "success");
+  }
+
+  async function removeFromList(listBookId) {
+    if (!isAdmin()) { toast("Sign in to edit lists", "error"); return; }
+    var res = await supabase.from("list_books").delete().eq("id", listBookId);
+    if (res.error) { toast("Remove failed: " + res.error.message, "error"); return; }
+    await refresh();
+    toast("Removed from list", "success");
+  }
+
+  /* ============================================================
+     OPEN LIBRARY FETCHERS
+     ============================================================ */
+  function openLibraryCoverUrl(coverId) {
+    if (!coverId) return null;
+    return "https://covers.openlibrary.org/b/id/" + coverId + "-L.jpg";
+  }
+
+  async function openLibrarySearch(title, author) {
+    var url = "https://openlibrary.org/search.json?title=" + encodeURIComponent(title) +
+              "&limit=5&fields=key,title,author_name,first_publish_year,cover_i,isbn,description";
+    if (author) url += "&author=" + encodeURIComponent(author);
+    var res = await fetch(url);
+    if (!res.ok) throw new Error("Open Library returned " + res.status);
+    var data = await res.json();
+    if (!data.docs || !data.docs.length) throw new Error("No Open Library match for that title");
+    return data.docs[0];
+  }
+
+  async function openLibraryWorkDescription(workKey) {
+    if (!workKey) return null;
+    try {
+      var res = await fetch("https://openlibrary.org" + workKey + ".json");
+      if (!res.ok) return null;
+      var data = await res.json();
+      if (!data.description) return null;
+      return typeof data.description === "string" ? data.description : (data.description.value || null);
+    } catch (e) { return null; }
+  }
+
+  async function fetchOpenLibraryCover() {
+    var title = $("m-title").value.trim();
+    var author = $("m-author").value.trim();
+    var isbn = $("m-isbn").value.trim();
+    if (!title) { toast("Enter a title first", "error"); return; }
+    var btn = $("btn-fetch-cover");
+    btn.disabled = true; btn.textContent = "Fetching…";
+    try {
+      var doc = await openLibrarySearch(title, author);
+      if (!isbn && doc.isbn && doc.isbn.length) {
+        $("m-isbn").value = doc.isbn[0];
+      }
+      if (!$("m-year").value && doc.first_publish_year) {
+        $("m-year").value = doc.first_publish_year;
+      }
+      if (!$("m-author").value && doc.author_name && doc.author_name.length) {
+        $("m-author").value = doc.author_name[0];
+      }
+      var coverUrl = openLibraryCoverUrl(doc.cover_i);
+      if (!coverUrl && doc.isbn && doc.isbn.length) {
+        coverUrl = "https://covers.openlibrary.org/b/isbn/" + doc.isbn[0] + "-L.jpg";
+      }
+      if (!coverUrl) throw new Error("No cover found on Open Library");
+      $("m-cover").value = coverUrl;
+
+      var desc = await openLibraryWorkDescription(doc.key);
+      if (desc) $("m-description").value = desc;
+      toast("Cover + synopsis fetched (Open Library)", "success");
+    } catch (err) {
+      toast("Fetch failed: " + err.message, "error");
+    } finally {
+      btn.disabled = false; btn.textContent = "Fetch Cover + Synopsis (Open Library)";
+    }
+  }
+
+  async function fetchSynopsis() {
+    var title = $("m-title").value.trim();
+    var author = $("m-author").value.trim();
+    if (!title) { toast("Enter a title first", "error"); return; }
+    var btn = $("btn-fetch-synopsis");
+    btn.disabled = true; btn.textContent = "Fetching…";
+    try {
+      var doc = await openLibrarySearch(title, author);
+      var desc = await openLibraryWorkDescription(doc.key);
+      if (!desc) throw new Error("Open Library has no synopsis for that title");
+      $("m-description").value = desc;
+      toast("Synopsis fetched from Open Library", "success");
+    } catch (err) {
+      toast("Synopsis fetch failed: " + err.message, "error");
+    } finally {
+      btn.disabled = false; btn.textContent = "Fetch Synopsis Only (Open Library)";
+    }
+  }
+
+  /* ============================================================
+     BACKUP / IMPORT
+     ============================================================ */
+  async function exportData() {
+    try {
+      await loadFromSupabase();
+      var blob = new Blob([JSON.stringify(DB, null, 2)], { type: "application/json" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "reading-room-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast("Export failed: " + err.message, "error");
+    }
+  }
+
+  async function handleImport(e) {
+    if (!isAdmin()) { toast("Sign in to import", "error"); e.target.value = ""; return; }
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = async function (evt) {
+      try {
+        var data = JSON.parse(evt.target.result);
+        var sourceBooks = data.books || data.movies;
+        if (!sourceBooks || !Array.isArray(sourceBooks)) throw new Error("Invalid format");
+        if (!confirm("This will ADD " + sourceBooks.length + " books to your Supabase library. Continue?")) {
+          e.target.value = ""; return;
+        }
+        var rows = sourceBooks.map(function (m) {
+          return {
+            title: m.title,
+            year: m.year || null,
+            author: m.author || m.director || null,
+            genre: m.genre || null,
+            isbn: m.isbn || null,
+            publisher: m.publisher || null,
+            format: m.format || "Paperback",
+            cover: m.cover || null,
+            description: m.description || null,
+            scott_rating: m.scott_rating || m.scottRating || m.personalRating || 0,
+            scott_review: m.scott_review || m.scottReview || m.personalReview || null,
+            nicole_rating: m.nicole_rating || m.nicoleRating || 0,
+            nicole_review: m.nicole_review || m.nicoleReview || null,
+            notes: m.notes || null
+          };
+        });
+        var res = await supabase.from("books").insert(rows);
+        if (res.error) throw new Error(res.error.message);
+        await refresh();
+        closeModal("data-modal");
+        toast("Imported " + rows.length + " books", "success");
+      } catch (err) {
+        alert("Import failed: " + err.message);
+      }
+      e.target.value = "";
+    };
+    reader.readAsText(file);
+  }
+
+  /* ============================================================
+     TAB SWITCHING
+     ============================================================ */
+  function switchTab(tab) {
+    document.querySelectorAll(".tab").forEach(function (t) {
+      t.classList.toggle("active", t.dataset.tab === tab);
+    });
+    ["library","loans","lists","settings"].forEach(function (v) {
+      var el = $("view-" + v);
+      if (el) el.style.display = v === tab ? "block" : "none";
+    });
+    if (tab === "library") renderLibrary();
+    if (tab === "loans") renderLoans();
+    if (tab === "lists") renderLists();
+  }
+
+  /* ============================================================
+     EVENT BINDINGS
+     ============================================================ */
+  function bind() {
+    document.querySelectorAll(".tab[data-tab]").forEach(function (t) {
+      t.addEventListener("click", function () { switchTab(t.dataset.tab); });
+    });
+
+    $("btn-add-book").addEventListener("click", openAddModal);
+    $("btn-add-list").addEventListener("click", openNewListModal);
+    $("btn-data").addEventListener("click", function () { openModal("data-modal"); });
+
+    ["search","filter-format","filter-status","sort"].forEach(function (id) {
+      $(id).addEventListener("input", renderLibrary);
+      $(id).addEventListener("change", renderLibrary);
+    });
+
+    $("genre-filter-toggle").addEventListener("click", function (e) {
+      e.stopPropagation();
+      genrePanelOpen = !genrePanelOpen;
+      $("genre-filter-panel").classList.toggle("open", genrePanelOpen);
+    });
+
+    $("genre-filter-list").addEventListener("change", function (e) {
+      var cb = e.target.closest("input[data-genre]");
+      if (!cb) return;
+      var key = cb.dataset.genre;
+      if (cb.checked) selectedGenres.add(key);
+      else selectedGenres.delete(key);
+      renderLibrary();
+    });
+
+    $("genre-clear").addEventListener("click", function (e) {
+      e.stopPropagation();
+      selectedGenres.clear();
+      renderLibrary();
+    });
+
+    document.addEventListener("click", function (e) {
+      if (!genrePanelOpen) return;
+      if (e.target.closest("#genre-filter")) return;
+      genrePanelOpen = false;
+      $("genre-filter-panel").classList.remove("open");
+    });
+
+    $("book-cancel").addEventListener("click", function () { closeModal("book-modal"); });
+    $("book-save").addEventListener("click", saveBook);
+    $("btn-fetch-cover").addEventListener("click", fetchOpenLibraryCover);
+    $("btn-fetch-synopsis").addEventListener("click", fetchSynopsis);
+
+    $("details-close").addEventListener("click", function () { closeModal("details-modal"); });
+    $("details-edit").addEventListener("click", function () {
+      if (this.dataset.id) openEditModal(this.dataset.id);
+    });
+    $("details-loan").addEventListener("click", function () {
+      var id = this.dataset.id;
+      if (!id) return;
+      closeModal("details-modal");
+      openLoanModal(id);
+    });
+
+    $("loan-cancel").addEventListener("click", function () { closeModal("loan-modal"); });
+    $("loan-save").addEventListener("click", saveLoan);
+
+    $("list-cancel").addEventListener("click", function () { closeModal("list-modal"); });
+    $("list-save").addEventListener("click", saveList);
+    $("btn-add-book-to-list").addEventListener("click", function () {
+      var sel = $("list-add-book");
+      var bid = sel.value;
+      if (!bid) { toast("Select a book first", "error"); return; }
+      if (pendingListBooks.indexOf(bid) === -1) pendingListBooks.push(bid);
+      renderPendingListBooks();
+      populateListBookSelect();
+    });
+    $("list-current-books").addEventListener("click", function (e) {
+      var rm = e.target.closest("[data-remove-pending]");
+      if (!rm) return;
+      var bid = rm.dataset.removePending;
+      pendingListBooks = pendingListBooks.filter(function (x) { return x !== bid; });
+      renderPendingListBooks();
+      populateListBookSelect();
+    });
+
+    $("btn-export").addEventListener("click", exportData);
+    $("data-close").addEventListener("click", function () { closeModal("data-modal"); });
+    $("import-file").addEventListener("change", handleImport);
+
+    $("btn-sign-in").addEventListener("click", signIn);
+    $("btn-sign-up").addEventListener("click", signUp);
+    $("btn-sign-out").addEventListener("click", signOut);
+
+    ["scott-rating-stars","nicole-rating-stars"].forEach(function (elId) {
+      $(elId).addEventListener("click", function (e) {
+        var span = e.target.closest("span[data-v]");
+        if (!span) return;
+        setRatingStars(elId, parseInt(span.dataset.v, 10));
+      });
+    });
+
+    document.querySelectorAll(".modal-backdrop").forEach(function (bd) {
+      bd.addEventListener("click", function (e) {
+        if (e.target === bd) bd.classList.remove("open");
+      });
+    });
+
+    $("library-grid").addEventListener("click", function (e) {
+      var btn = e.target.closest("button");
+      if (btn) {
+        if (btn.disabled) return;
+        if (btn.dataset.loan)   { openLoanModal(btn.dataset.loan); return; }
+        if (btn.dataset.edit)   { openEditModal(btn.dataset.edit); return; }
+        if (btn.dataset.delete) { deleteBook(btn.dataset.delete); return; }
+        if (btn.dataset.return) { returnBook(btn.dataset.return); return; }
+        return;
+      }
+      var card = e.target.closest(".card[data-details]");
+      if (card) showDetails(card.dataset.details);
+    });
+
+    $("loans-container").addEventListener("click", function (e) {
+      var b = e.target.closest("button");
+      if (b && b.dataset.return) returnBook(b.dataset.return);
+    });
+
+    $("lists-container").addEventListener("click", function (e) {
+      var rm = e.target.closest("[data-remove-from-list]");
+      if (rm) { e.stopPropagation(); removeFromList(rm.dataset.removeFromList); return; }
+      var edit = e.target.closest("[data-edit-list]");
+      if (edit) { e.stopPropagation(); openEditListModal(edit.dataset.editList); return; }
+      var del = e.target.closest("[data-delete-list]");
+      if (del) { e.stopPropagation(); deleteList(del.dataset.deleteList); return; }
+      var chip = e.target.closest("[data-details]");
+      if (chip) { showDetails(chip.dataset.details); return; }
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        document.querySelectorAll(".modal-backdrop.open").forEach(function (bd) {
+          bd.classList.remove("open");
+        });
+      }
+    });
+  }
+
+  /* ============================================================
+     INIT
+     ============================================================ */
+  (async function init() {
+    if (SUPABASE_URL.indexOf("PASTE_") === 0 || SUPABASE_KEY.indexOf("PASTE_") === 0) {
+      document.body.innerHTML =
+        '<div style="max-width:600px;margin:80px auto;padding:24px;background:#1a1f27;border:1px solid #2d3642;border-radius:12px;color:#e6edf3;font-family:sans-serif">' +
+        "<h2>Configuration needed</h2>" +
+        "<p>Open this file in a text editor and replace:</p>" +
+        "<pre style='background:#0f1216;padding:12px;border-radius:8px'>var SUPABASE_URL = \"PASTE_YOUR_SUPABASE_URL_HERE\";\nvar SUPABASE_KEY = \"PASTE_YOUR_PUBLISHABLE_KEY_HERE\";</pre>" +
+        "<p>with your new Supabase project's URL and Publishable key.</p>" +
+        "</div>";
+      return;
+    }
+    bind();
+    await initAuth();
+    updateAuthUi();
+    await refresh();
+  })();
+})();
+</script>
+</body>
+</html>
